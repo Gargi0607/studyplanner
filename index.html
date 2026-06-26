@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Study Planner</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #e8eaf0;
+    --text-muted: #8b90a0;
+    --accent: #7c6ff7;
+    --accent-bg: rgba(124,111,247,0.15);
+    --accent-border: rgba(124,111,247,0.35);
+    --green: #34d399;
+    --green-bg: rgba(52,211,153,0.12);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,0.12);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.12);
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  /* Layout */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .main { flex: 1; padding: 2rem; overflow-y: auto; max-width: 900px; }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 2rem;
+  }
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .nav-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text-muted);
+    margin-bottom: .5rem; margin-top: 1rem; padding-left: .5rem;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: .55rem .75rem;
+    background: none; border: none; border-radius: 8px;
+    color: var(--text-muted); font-size: .93rem; cursor: pointer;
+    text-align: left; transition: background .15s, color .15s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 1.1rem; }
+
+  /* Header */
+  .page-header { margin-bottom: 1.75rem; }
+  .page-title { font-size: 1.6rem; font-weight: 700; margin-bottom: .3rem; }
+  .page-sub { color: var(--text-muted); font-size: .9rem; }
+
+  /* Stats row */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.75rem; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+  }
+  .stat-label { font-size: .78rem; color: var(--text-muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.red { color: var(--red); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+
+  /* Section toggle */
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* Task list */
+  .task-add-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: .9rem;
+    padding: .55rem .85rem; font-family: inherit; outline: none;
+    transition: border .15s;
+  }
+  .input:focus { border-color: var(--accent-border); }
+  select.input { cursor: pointer; }
+  .btn {
+    padding: .55rem 1rem; border-radius: 8px; border: 1px solid var(--border-strong);
+    font-size: .9rem; font-weight: 500; cursor: pointer; font-family: inherit;
+    transition: background .15s, border-color .15s; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .btn-primary:hover { background: #6c5ef0; }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-danger { background: transparent; color: var(--red); border-color: transparent; font-size: .8rem; padding: .3rem .6rem; }
+  .btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+
+  .task-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: .75rem .9rem; border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: .5rem;
+    background: var(--surface2);
+    transition: border-color .15s;
+  }
+  .task-item:hover { border-color: var(--border-strong); }
+  .task-item.done { opacity: .55; }
+  .task-item.done .task-name { text-decoration: line-through; }
+  .task-check {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 2px solid var(--border-strong); background: none;
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; font-size: 11px; color: #fff; font-weight: 700; }
+  .task-name { flex: 1; font-size: .93rem; }
+  .task-meta { display: flex; gap: 6px; align-items: center; }
+  .badge {
+    font-size: .72rem; font-weight: 600; padding: .2rem .5rem;
+    border-radius: 5px; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-high { background: var(--red-bg); color: var(--red); }
+  .badge-med { background: var(--amber-bg); color: var(--amber); }
+  .badge-low { background: var(--green-bg); color: var(--green); }
+  .badge-subject { background: var(--accent-bg); color: var(--accent); }
+
+  /* Timer */
+  .timer-wrap { text-align: center; padding: 1.5rem 0; }
+  .timer-ring { position: relative; display: inline-block; }
+  .timer-display {
+    font-size: 3.5rem; font-weight: 700; letter-spacing: -.03em;
+    color: var(--text); line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-label { font-size: .85rem; color: var(--text-muted); margin-top: .4rem; }
+  .timer-controls { display: flex; justify-content: center; gap: 10px; margin-top: 1.25rem; }
+  .timer-progress {
+    height: 4px; background: var(--border);
+    border-radius: 2px; margin: 1rem 0; overflow: hidden;
+  }
+  .timer-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width .5s linear; }
+  .mode-tabs { display: flex; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; margin-bottom: 1.25rem; }
+  .mode-tab {
+    flex: 1; padding: .45rem .6rem; text-align: center; border: none;
+    background: none; border-radius: 6px; cursor: pointer; font-size: .85rem;
+    color: var(--text-muted); font-family: inherit; font-weight: 500;
+    transition: background .15s, color .15s;
+  }
+  .mode-tab.active { background: var(--surface); color: var(--text); }
+
+  /* Schedule */
+  .schedule-grid { display: flex; flex-direction: column; gap: 8px; }
+  .schedule-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: .7rem 1rem; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface2);
+  }
+  .sched-time { font-size: .8rem; color: var(--text-muted); min-width: 90px; font-variant-numeric: tabular-nums; }
+  .sched-subject { font-weight: 500; flex: 1; }
+  .sched-dur { font-size: .8rem; color: var(--text-muted); }
+  .sched-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Progress bars */
+  .subject-row { margin-bottom: 1rem; }
+  .subject-row-header { display: flex; justify-content: space-between; margin-bottom: .35rem; font-size: .9rem; }
+  .progress-track { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+
+  /* Add schedule modal row */
+  .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .form-row .input { min-width: 120px; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .main { padding: 1rem; }
+  }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: .9rem; }
+  .empty-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+  /* Footer nav (mobile) */
+  .mob-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: .6rem; justify-content: space-around;
+  }
+  @media (max-width: 700px) { .mob-nav { display: flex; } }
+  .mob-nav-btn { background: none; border: none; color: var(--text-muted); font-size: .7rem; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; font-family: inherit; }
+  .mob-nav-btn.active { color: var(--accent); }
+  .mob-icon { font-size: 1.3rem; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">📚</div>
+      StudyPlan
+    </div>
+    <div class="nav-label">Main</div>
+    <button class="nav-btn active" onclick="showSection('dashboard',this)">
+      <span class="nav-icon">🏠</span> Dashboard
+    </button>
+    <button class="nav-btn" onclick="showSection('tasks',this)">
+      <span class="nav-icon">✅</span> Tasks
+    </button>
+    <button class="nav-btn" onclick="showSection('timer',this)">
+      <span class="nav-icon">⏱️</span> Focus Timer
+    </button>
+    <button class="nav-btn" onclick="showSection('schedule',this)">
+      <span class="nav-icon">📅</span> Schedule
+    </button>
+    <div class="nav-label">Insights</div>
+    <button class="nav-btn" onclick="showSection('progress',this)">
+      <span class="nav-icon">📊</span> Progress
+    </button>
+    <div style="margin-top:auto; padding-top:1.5rem;">
+      <button class="nav-btn" onclick="clearAll()">
+        <span class="nav-icon">🗑️</span> Clear All Data
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard" class="section visible">
+      <div class="page-header">
+        <div class="page-title">Good <span id="greeting-time"></span>! 👋</div>
+        <div class="page-sub" id="greeting-date"></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Tasks Today</div>
+          <div class="stat-value accent" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value green" id="stat-done">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value amber" id="stat-pending">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Focus Sessions</div>
+          <div class="stat-value" id="stat-sessions">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Today's Tasks</div>
+        <div id="dash-tasks-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Today's Schedule</div>
+        <div id="dash-schedule-list"></div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div id="sec-tasks" class="section">
+      <div class="page-header">
+        <div class="page-title">Tasks</div>
+        <div class="page-sub">Manage your study tasks and assignments</div>
+      </div>
+      <div class="card">
+        <div class="task-add-row">
+          <input class="input" id="task-input" placeholder="Add a new task…" onkeydown="if(event.key==='Enter')addTask()" />
+          <select class="input" id="task-subject" style="max-width:140px;">
+            <option value="">Subject</option>
+          </select>
+          <select class="input" id="task-priority" style="max-width:110px;">
+            <option value="med">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+          <button class="btn btn-primary" onclick="addTask()">+ Add</button>
+        </div>
+        <div id="tasks-list"></div>
+      </div>
+    </div>
+
+    <!-- TIMER -->
+    <div id="sec-timer" class="section">
+      <div class="page-header">
+        <div class="page-title">Focus Timer</div>
+        <div class="page-sub">Stay focused with Pomodoro sessions</div>
+      </div>
+      <div class="card" style="max-width:400px; margin:0 auto;">
+        <div class="mode-tabs">
+          <button class="mode-tab active" onclick="setMode('focus',this)">Focus 25m</button>
+          <button class="mode-tab" onclick="setMode('short',this)">Short Break 5m</button>
+          <button class="mode-tab" onclick="setMode('long',this)">Long Break 15m</button>
+        </div>
+        <div class="timer-wrap">
+          <div class="timer-display" id="timer-display">25:00</div>
+          <div class="timer-label" id="timer-label">Ready to focus?</div>
+        </div>
+        <div class="timer-progress">
+          <div class="timer-bar" id="timer-bar" style="width:100%"></div>
+        </div>
+        <div class="timer-controls">
+          <button class="btn btn-ghost" onclick="resetTimer()">↺ Reset</button>
+          <button class="btn btn-primary" id="timer-btn" onclick="toggleTimer()">▶ Start</button>
+        </div>
+        <hr class="divider" />
+        <div style="text-align:center;">
+          <div class="stat-label" style="margin-bottom:.3rem;">Sessions completed today</div>
+          <div class="stat-value accent" id="session-count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="sec-schedule" class="section">
+      <div class="page-header">
+        <div class="page-title">Schedule</div>
+        <div class="page-sub">Plan your study sessions for the week</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add a Session</div>
+        <div class="form-row" style="margin-bottom:.5rem;">
+          <input class="input" id="sched-subject" placeholder="Subject" />
+          <input class="input" id="sched-time" type="time" value="09:00" />
+          <input class="input" id="sched-dur" type="number" placeholder="Duration (min)" min="5" max="480" value="60" style="max-width:150px;" />
+          <select class="input" id="sched-day" style="max-width:130px;">
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+          </select>
+          <button class="btn btn-primary" onclick="addSchedule()">+ Add</button>
+        </div>
+      </div>
+      <div id="schedule-sections"></div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div id="sec-progress" class="section">
+      <div class="page-header">
+        <div class="page-title">Progress</div>
+        <div class="page-sub">Track your study efforts by subject</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Subject Progress</div>
+        <div id="progress-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📁 Manage Subjects</div>
+        <div class="task-add-row">
+          <input class="input" id="subject-input" placeholder="New subject name…" onkeydown="if(event.key==='Enter')addSubject()" />
+          <input class="input" id="subject-color" type="color" value="#7c6ff7" style="max-width:52px; padding:.3rem; cursor:pointer;" />
+          <button class="btn btn-primary" onclick="addSubject()">+ Add</button>
+        </div>
+        <div id="subjects-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Mobile bottom nav -->
+<div class="mob-nav">
+  <button class="mob-nav-btn active" onclick="showSection('dashboard',this)">
+    <span class="mob-icon">🏠</span> Home
+  </button>
+  <button class="mob-nav-btn" onclick="showSection('tasks',this)">
+    <span class="mob-icon">✅</span> Tasks
+  </button>
+  <button class="mob-nav-btn" onclick="showSection('timer',this)">
+    <span class="mob-icon">⏱️</span> Timer
+  </button>
+  <button class="mob-nav-btn" onclick="showSection('schedule',this)">
+    <span class="mob-icon">📅</span> Schedule
+  </button>
+  <button class="mob-nav-btn" onclick="showSection('progress',this)">
+    <span class="mob-icon">📊</span> Progress
+  </button>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let state = JSON.parse(localStorage.getItem('study-planner') || '{}');
+if (!state.tasks) state.tasks = [];
+if (!state.schedule) state.schedule = [];
+if (!state.subjects) state.subjects = [
+  { name: 'Mathematics', color: '#7c6ff7' },
+  { name: 'Physics', color: '#34d399' },
+  { name: 'English', color: '#fbbf24' },
+  { name: 'History', color: '#f87171' },
+];
+if (!state.sessions) state.sessions = 0;
+
+function save() { localStorage.setItem('study-planner', JSON.stringify(state)); }
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+let currentSection = 'dashboard';
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.getElementById('sec-' + id).classList.add('visible');
+  document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  currentSection = id;
+  render();
+}
+
+// ── Greeting ─────────────────────────────────────────────────────────────────
+function updateGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  document.getElementById('greeting-time').textContent = greet;
+  document.getElementById('greeting-date').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+function addTask() {
+  const name = document.getElementById('task-input').value.trim();
+  if (!name) return;
+  state.tasks.push({
+    id: Date.now(),
+    name,
+    subject: document.getElementById('task-subject').value,
+    priority: document.getElementById('task-priority').value,
+    done: false,
+    created: new Date().toISOString()
+  });
+  document.getElementById('task-input').value = '';
+  save(); render();
+}
+function toggleTask(id) {
+  const t = state.tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  save(); render();
+}
+function renderTaskItem(t) {
+  const pBadge = t.priority === 'high' ? 'badge-high' : t.priority === 'low' ? 'badge-low' : 'badge-med';
+  const pLabel = t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Med';
+  return `<div class="task-item ${t.done ? 'done' : ''}">
+    <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask(${t.id})"></div>
+    <div class="task-name">${esc(t.name)}</div>
+    <div class="task-meta">
+      ${t.subject ? `<span class="badge badge-subject">${esc(t.subject)}</span>` : ''}
+      <span class="badge ${pBadge}">${pLabel}</span>
+      <button class="btn btn-danger" onclick="deleteTask(${t.id})">✕</button>
+    </div>
+  </div>`;
+}
+function renderTasks() {
+  const list = document.getElementById('tasks-list');
+  if (!list) return;
+  if (!state.tasks.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">📝</div>No tasks yet. Add one above!</div>'; return; }
+  const pending = state.tasks.filter(t => !t.done);
+  const done = state.tasks.filter(t => t.done);
+  list.innerHTML = pending.map(renderTaskItem).join('') +
+    (done.length ? `<div style="font-size:.8rem;color:var(--text-muted);margin:.75rem 0 .4rem;font-weight:500;">COMPLETED (${done.length})</div>` + done.map(renderTaskItem).join('') : '');
+}
+function renderSubjectOptions() {
+  const sel = document.getElementById('task-subject');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Subject</option>' + state.subjects.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+}
+
+// ── Timer ────────────────────────────────────────────────────────────────────
+const MODES = { focus: 25*60, short: 5*60, long: 15*60 };
+let timerMode = 'focus';
+let timerTotal = MODES.focus;
+let timerLeft = MODES.focus;
+let timerRunning = false;
+let timerInterval = null;
+
+function setMode(m, btn) {
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  timerMode = m;
+  timerTotal = MODES[m];
+  timerLeft = timerTotal;
+  clearInterval(timerInterval); timerRunning = false;
+  updateTimerUI();
+}
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval); timerRunning = false;
+    document.getElementById('timer-btn').textContent = '▶ Resume';
+    document.getElementById('timer-label').textContent = 'Paused';
+  } else {
+    timerRunning = true;
+    document.getElementById('timer-btn').textContent = '⏸ Pause';
+    document.getElementById('timer-label').textContent = timerMode === 'focus' ? '🎯 Focusing…' : '☕ Taking a break…';
+    timerInterval = setInterval(() => {
+      timerLeft--;
+      if (timerLeft <= 0) {
+        clearInterval(timerInterval); timerRunning = false;
+        if (timerMode === 'focus') { state.sessions++; save(); }
+        document.getElementById('timer-label').textContent = timerMode === 'focus' ? '✅ Session done!' : '✅ Break done!';
+        document.getElementById('timer-btn').textContent = '▶ Start';
+        document.getElementById('session-count').textContent = state.sessions;
+        document.getElementById('stat-sessions').textContent = state.sessions;
+        timerLeft = 0;
+      }
+      updateTimerUI();
+    }, 1000);
+  }
+}
+function resetTimer() {
+  clearInterval(timerInterval); timerRunning = false;
+  timerLeft = timerTotal;
+  document.getElementById('timer-btn').textContent = '▶ Start';
+  document.getElementById('timer-label').textContent = 'Ready to focus?';
+  updateTimerUI();
+}
+function updateTimerUI() {
+  const m = Math.floor(timerLeft/60).toString().padStart(2,'0');
+  const s = (timerLeft%60).toString().padStart(2,'0');
+  const disp = document.getElementById('timer-display');
+  const bar = document.getElementById('timer-bar');
+  if (disp) disp.textContent = `${m}:${s}`;
+  if (bar) bar.style.width = Math.round((timerLeft/timerTotal)*100) + '%';
+  document.getElementById('session-count').textContent = state.sessions;
+}
+
+// ── Schedule ─────────────────────────────────────────────────────────────────
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DOT_COLORS = ['#7c6ff7','#34d399','#fbbf24','#f87171','#60a5fa','#f472b6','#a78bfa','#fb923c'];
+function addSchedule() {
+  const subj = document.getElementById('sched-subject').value.trim();
+  const time = document.getElementById('sched-time').value;
+  const dur = parseInt(document.getElementById('sched-dur').value) || 60;
+  const day = document.getElementById('sched-day').value;
+  if (!subj) return;
+  state.schedule.push({ id: Date.now(), subject: subj, time, duration: dur, day });
+  document.getElementById('sched-subject').value = '';
+  save(); render();
+}
+function deleteSchedule(id) {
+  state.schedule = state.schedule.filter(s => s.id !== id);
+  save(); render();
+}
+function renderSchedule() {
+  const el = document.getElementById('schedule-sections');
+  if (!el) return;
+  let html = '';
+  DAYS.forEach((day, di) => {
+    const items = state.schedule.filter(s => s.day === day).sort((a,b) => a.time.localeCompare(b.time));
+    if (!items.length) return;
+    html += `<div class="card"><div class="card-title">📅 ${day}</div><div class="schedule-grid">`;
+    items.forEach((s, i) => {
+      const [h,m] = s.time.split(':');
+      const hh = parseInt(h); const ampm = hh >= 12 ? 'PM' : 'AM';
+      const h12 = hh % 12 || 12;
+      html += `<div class="schedule-item">
+        <div class="sched-dot" style="background:${DOT_COLORS[i % DOT_COLORS.length]}"></div>
+        <div class="sched-time">${h12}:${m} ${ampm}</div>
+        <div class="sched-subject">${esc(s.subject)}</div>
+        <div class="sched-dur">${s.duration} min</div>
+        <button class="btn btn-danger" onclick="deleteSchedule(${s.id})">✕</button>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  el.innerHTML = html || '<div class="empty"><div class="empty-icon">📅</div>No sessions scheduled yet.</div>';
+}
+
+// ── Progress ─────────────────────────────────────────────────────────────────
+function addSubject() {
+  const name = document.getElementById('subject-input').value.trim();
+  const color = document.getElementById('subject-color').value;
+  if (!name) return;
+  if (state.subjects.find(s => s.name.toLowerCase() === name.toLowerCase())) return;
+  state.subjects.push({ name, color });
+  document.getElementById('subject-input').value = '';
+  save(); render();
+}
+function deleteSubject(name) {
+  state.subjects = state.subjects.filter(s => s.name !== name);
+  save(); render();
+}
+function renderProgress() {
+  const pb = document.getElementById('progress-bars');
+  const sl = document.getElementById('subjects-list');
+  if (!pb) return;
+  if (!state.subjects.length) { pb.innerHTML = '<div class="empty">Add subjects below to track progress.</div>'; }
+  else {
+    pb.innerHTML = state.subjects.map(subj => {
+      const total = state.tasks.filter(t => t.subject === subj.name).length;
+      const done = state.tasks.filter(t => t.subject === subj.name && t.done).length;
+      const pct = total ? Math.round((done/total)*100) : 0;
+      return `<div class="subject-row">
+        <div class="subject-row-header">
+          <span style="font-weight:500;">${esc(subj.name)}</span>
+          <span style="color:var(--text-muted);font-size:.85rem;">${done}/${total} tasks · ${pct}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${subj.color};"></div></div>
+      </div>`;
+    }).join('');
+  }
+  if (sl) {
+    sl.innerHTML = state.subjects.map(s =>
+      `<div class="task-item" style="border-left:3px solid ${s.color};">
+        <div style="width:14px;height:14px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+        <div class="task-name">${esc(s.name)}</div>
+        <button class="btn btn-danger" onclick="deleteSubject('${esc(s.name).replace(/'/g,"\\'")}')">✕</button>
+      </div>`
+    ).join('') || '<div class="empty">No subjects added.</div>';
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const total = state.tasks.length;
+  const done = state.tasks.filter(t => t.done).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-pending').textContent = total - done;
+  document.getElementById('stat-sessions').textContent = state.sessions;
+
+  const dl = document.getElementById('dash-tasks-list');
+  if (dl) {
+    const pending = state.tasks.filter(t => !t.done).slice(0, 5);
+    dl.innerHTML = pending.length ? pending.map(renderTaskItem).join('') : '<div class="empty"><div class="empty-icon">🎉</div>All tasks done!</div>';
+  }
+  const today = new Date().toLocaleDateString('en-US',{weekday:'long'});
+  const todaySched = state.schedule.filter(s => s.day === today).sort((a,b) => a.time.localeCompare(b.time));
+  const dsl = document.getElementById('dash-schedule-list');
+  if (dsl) {
+    dsl.innerHTML = todaySched.length
+      ? `<div class="schedule-grid">${todaySched.map((s,i) => {
+          const [h,m] = s.time.split(':');
+          const hh = parseInt(h); const ampm = hh >= 12 ? 'PM' : 'AM';
+          const h12 = hh % 12 || 12;
+          return `<div class="schedule-item">
+            <div class="sched-dot" style="background:${DOT_COLORS[i % DOT_COLORS.length]}"></div>
+            <div class="sched-time">${h12}:${m} ${ampm}</div>
+            <div class="sched-subject">${esc(s.subject)}</div>
+            <div class="sched-dur">${s.duration} min</div>
+          </div>`;
+        }).join('')}</div>`
+      : '<div class="empty">No sessions scheduled for today.</div>';
+  }
+}
+
+// ── Master render ─────────────────────────────────────────────────────────────
+function render() {
+  renderSubjectOptions();
+  renderDashboard();
+  renderTasks();
+  renderSchedule();
+  renderProgress();
+  document.getElementById('session-count').textContent = state.sessions;
+}
+
+function clearAll() {
+  if (!confirm('Clear all data? This cannot be undone.')) return;
+  state = { tasks: [], schedule: [], subjects: [
+    { name: 'Mathematics', color: '#7c6ff7' },
+    { name: 'Physics', color: '#34d399' },
+    { name: 'English', color: '#fbbf24' },
+    { name: 'History', color: '#f87171' },
+  ], sessions: 0 };
+  save(); render();
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updateGreeting();
+render();
+updateTimerUI();
+</script>
+</body>
+</html>
